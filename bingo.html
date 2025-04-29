@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>オリジナルビンゴカード作成</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .grid { 
+      display: grid; 
+      gap: 5px; 
+      margin-top: 20px; 
+    }
+    .cell { 
+      background: #f0f0f0; 
+      padding: 20px; 
+      text-align: center; 
+      cursor: pointer; 
+      position: relative; 
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4vw;
+      min-height: 60px;
+    }
+    .cell.completed::after { 
+      content: "\25CB"; 
+      font-size: 24px; 
+      position: absolute; 
+      top: 5px; 
+      right: 5px; 
+      color: red; 
+    }
+    .memo { 
+      display: none; 
+      margin-top: 5px; 
+      font-size: 10px; 
+      color: #666;
+    }
+    .cell.completed .memo { display: block; }
+    .input-area { 
+      margin-top: 20px; 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 10px;
+    }
+    .input-area input {
+      width: calc(33% - 10px);
+      min-width: 80px;
+      padding: 8px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    @media (min-width: 600px) {
+      .cell { font-size: 2vw; }
+      .input-area input { width: calc(20% - 10px); }
+    }
+  </style>
+</head>
+<body>
+  <h1>オリジナルビンゴカード作成</h1>
+
+  <div>
+    サイズ選択：
+    <label><input type="radio" name="size" value="3" checked>3x3</label>
+    <label><input type="radio" name="size" value="4">4x4</label>
+    <label><input type="radio" name="size" value="5">5x5</label>
+    <button onclick="generateInputs()">項目入力フォーム作成</button>
+  </div>
+
+  <div id="inputArea" class="input-area"></div>
+
+  <button onclick="createBingo()">ビンゴカード生成</button>
+
+  <div id="bingoBoard" class="grid"></div>
+
+  <script>
+    let size = 3;
+
+    function generateInputs() {
+      size = parseInt(document.querySelector('input[name="size"]:checked').value);
+      const inputArea = document.getElementById('inputArea');
+      inputArea.innerHTML = '';
+      for (let i = 0; i < size * size; i++) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = `マス${i + 1}`;
+        input.id = `cellInput${i}`;
+        inputArea.appendChild(input);
+      }
+    }
+
+    function createBingo() {
+      const board = document.getElementById('bingoBoard');
+      board.innerHTML = '';
+      board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+      for (let i = 0; i < size * size; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        const text = document.getElementById(`cellInput${i}`).value || `マス${i + 1}`;
+        cell.innerHTML = `<div class="text">${text}</div><div class="memo"></div>`;
+        cell.addEventListener('click', () => toggleCell(cell));
+        board.appendChild(cell);
+      }
+    }
+
+    function toggleCell(cell) {
+      if (cell.classList.contains('completed')) {
+        cell.classList.remove('completed');
+      } else {
+        cell.classList.add('completed');
+        const memo = prompt('メモを入力してください（空欄可）:', '');
+        if (memo !== null) {
+          cell.querySelector('.memo').textContent = memo;
+        }
+      }
+    }
+
+    // 最初に3x3用意
+    generateInputs();
+  </script>
+</body>
+</html>
