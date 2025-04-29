@@ -4,39 +4,55 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>オリジナルビンゴカード作成</title>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c&display=swap" rel="stylesheet">
   <style>
-    body { font-family: sans-serif; padding: 20px; }
+    body { 
+      font-family: 'M PLUS Rounded 1c', sans-serif; 
+      padding: 20px; 
+      background: #a1262d;
+      color: white;
+      text-align: center;
+    }
+    h1 {
+      color: white;
+    }
     .grid { 
       display: grid; 
       gap: 5px; 
-      margin-top: 20px; 
+      margin: 20px auto; 
+      background: #a1262d; 
+      padding: 5px;
+      max-width: 500px;
     }
     .cell { 
-      background: #f0f0f0; 
-      padding: 20px; 
+      background: #b2e6f5; 
+      border: 2px solid white; 
       text-align: center; 
       cursor: pointer; 
       position: relative; 
       aspect-ratio: 1 / 1;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-size: 4vw;
-      min-height: 60px;
+      font-size: 2rem;
+      font-weight: bold;
+      color: black;
+      transition: background 0.3s;
+      border-radius: 10px;
     }
-    .cell.completed::after { 
-      content: "\25CB"; 
-      font-size: 24px; 
-      position: absolute; 
-      top: 5px; 
-      right: 5px; 
-      color: red; 
+    .cell.completed {
+      background: gold;
     }
     .memo { 
       display: none; 
       margin-top: 5px; 
-      font-size: 10px; 
-      color: #666;
+      font-size: 0.7rem; 
+      color: #333;
+      border: 1px solid #ccc;
+      padding: 2px 4px;
+      border-radius: 4px;
+      background-color: #f9f9f9;
     }
     .cell.completed .memo { display: block; }
     .input-area { 
@@ -44,6 +60,7 @@
       display: flex; 
       flex-wrap: wrap; 
       gap: 10px;
+      justify-content: center;
     }
     .input-area input {
       width: calc(33% - 10px);
@@ -53,11 +70,43 @@
     }
     button {
       padding: 10px 20px;
-      margin-top: 10px;
+      margin: 10px;
       font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background: white;
+      color: #a1262d;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #f0f0f0;
+    }
+    #bingoEffect {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3rem;
+      color: gold;
+      background: white;
+      padding: 20px 40px;
+      border-radius: 10px;
+      border: 3px solid gold;
+      display: none;
+      z-index: 1000;
+    }
+    @keyframes pop {
+      0% { transform: scale(0.5); opacity: 0; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+    .show-bingo {
+      display: block;
+      animation: pop 0.6s ease;
     }
     @media (min-width: 600px) {
-      .cell { font-size: 2vw; }
+      .cell { font-size: 1.5rem; }
       .input-area input { width: calc(20% - 10px); }
     }
   </style>
@@ -76,13 +125,17 @@
   <div id="inputArea" class="input-area"></div>
 
   <button onclick="createBingo()">ビンゴカード生成</button>
+  <button onclick="saveBingo()">ビンゴを保存する</button>
 
   <div id="bingoBoard" class="grid"></div>
+  <div id="bingoEffect">🎉 BINGO！ 🎉</div>
 
   <script>
     let size = 3;
+    let bingoShown = false;
 
     function generateInputs() {
+      bingoShown = false;
       size = parseInt(document.querySelector('input[name="size"]:checked').value);
       const inputArea = document.getElementById('inputArea');
       inputArea.innerHTML = '';
@@ -96,26 +149,27 @@
     }
 
     function createBingo() {
+      bingoShown = false;
       const board = document.getElementById('bingoBoard');
       board.innerHTML = '';
       board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
 
-      // 入力された文字をすべて集める
       let texts = [];
       for (let i = 0; i < size * size; i++) {
         const text = document.getElementById(`cellInput${i}`).value || `マス${i + 1}`;
         texts.push(text);
       }
 
-      // 配列をシャッフルする
       texts = shuffleArray(texts);
 
-      // シャッフルされた順番でマスを作成
       for (let i = 0; i < size * size; i++) {
         const cell = document.createElement('div');
         cell.className = 'cell';
         cell.innerHTML = `<div class="text">${texts[i]}</div><div class="memo"></div>`;
-        cell.addEventListener('click', () => toggleCell(cell));
+        cell.addEventListener('click', () => {
+          toggleCell(cell);
+          checkBingo();
+        });
         board.appendChild(cell);
       }
     }
@@ -140,8 +194,75 @@
       }
     }
 
-    // 最初に3x3用意
+    function checkBingo() {
+      if (bingoShown) return;
+      const cells = Array.from(document.querySelectorAll('.cell'));
+      const rows = [], cols = [], diag1 = [], diag2 = [];
+
+      for (let r = 0; r < size; r++) {
+        rows[r] = [], cols[r] = [];
+        for (let c = 0; c < size; c++) {
+          const i = r * size + c;
+          rows[r].push(cells[i]);
+          cols[c].push(cells[i]);
+          if (r === c) diag1.push(cells[i]);
+          if (r + c === size - 1) diag2.push(cells[i]);
+        }
+      }
+
+      const lines = [...rows, ...cols, diag1, diag2];
+      for (const line of lines) {
+        if (line.every(cell => cell.classList.contains('completed'))) {
+          bingoShown = true;
+          showBingoEffect();
+          break;
+        }
+      }
+    }
+
+    function showBingoEffect() {
+      const effect = document.getElementById('bingoEffect');
+      effect.classList.add('show-bingo');
+      setTimeout(() => effect.classList.remove('show-bingo'), 3000);
+    }
+
+    function saveBingo() {
+      const cells = document.querySelectorAll('.cell');
+      const data = [];
+      cells.forEach(cell => {
+        data.push({
+          text: cell.querySelector('.text').textContent,
+          completed: cell.classList.contains('completed'),
+          memo: cell.querySelector('.memo').textContent
+        });
+      });
+      localStorage.setItem('bingoData', JSON.stringify({size, data}));
+      alert('ビンゴカードを保存しました！');
+    }
+
+    function loadBingo() {
+      const saved = localStorage.getItem('bingoData');
+      if (!saved) return;
+      const { size: savedSize, data } = JSON.parse(saved);
+      size = savedSize;
+      const board = document.getElementById('bingoBoard');
+      board.innerHTML = '';
+      board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+      data.forEach(cellData => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        if (cellData.completed) cell.classList.add('completed');
+        cell.innerHTML = `<div class="text">${cellData.text}</div><div class="memo">${cellData.memo}</div>`;
+        cell.addEventListener('click', () => {
+          toggleCell(cell);
+          checkBingo();
+        });
+        board.appendChild(cell);
+      });
+    }
+
     generateInputs();
+    loadBingo();
   </script>
 </body>
 </html>
