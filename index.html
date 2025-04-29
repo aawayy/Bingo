@@ -1,9 +1,9 @@
 function showBingoEffect() {
   const effect = document.getElementById('bingoEffect');
-  effect.style.display = 'block';        // ← ここで確実に表示！
-  effect.style.animation = 'pop 0.6s ease';
+  effect.style.display = 'block';        // ← 明示的に表示する！
+  effect.style.animation = 'pop 0.6s ease'; // ← アニメーションも直接指定
   setTimeout(() => {
-    effect.style.display = 'none';       // 3秒後にまた消す
-    effect.style.animation = '';         // アニメーションをリセット
+    effect.style.display = 'none';       // ← 3秒後に消す
+    effect.style.animation = '';         // ← アニメリセット
   }, 3000);
 }
