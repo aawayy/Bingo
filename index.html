@@ -99,14 +99,33 @@
       const board = document.getElementById('bingoBoard');
       board.innerHTML = '';
       board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+      // 入力された文字をすべて集める
+      let texts = [];
+      for (let i = 0; i < size * size; i++) {
+        const text = document.getElementById(`cellInput${i}`).value || `マス${i + 1}`;
+        texts.push(text);
+      }
+
+      // 配列をシャッフルする
+      texts = shuffleArray(texts);
+
+      // シャッフルされた順番でマスを作成
       for (let i = 0; i < size * size; i++) {
         const cell = document.createElement('div');
         cell.className = 'cell';
-        const text = document.getElementById(`cellInput${i}`).value || `マス${i + 1}`;
-        cell.innerHTML = `<div class="text">${text}</div><div class="memo"></div>`;
+        cell.innerHTML = `<div class="text">${texts[i]}</div><div class="memo"></div>`;
         cell.addEventListener('click', () => toggleCell(cell));
         board.appendChild(cell);
       }
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
     }
 
     function toggleCell(cell) {
